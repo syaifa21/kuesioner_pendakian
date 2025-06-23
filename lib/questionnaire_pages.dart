@@ -222,7 +222,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
       print('Data to be saved: ${jsonEncode(dataToSave.toJson())}');
       await _saveQuestionnaireData(dataToSave);
 
-      // Tambahkan delay kecil setelah penyimpanan untuk memastikan data ditulis ke disk
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
@@ -250,9 +249,11 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
       _saranLainController.clear();
     } else {
       print('Form validation failed.');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mohon lengkapi semua bidang yang wajib diisi.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mohon lengkapi semua bidang yang wajib diisi.')),
+        );
+      }
     }
   }
 
@@ -1074,7 +1075,9 @@ class SummaryScreen extends StatefulWidget {
 class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   List<QuestionnaireData> _allQuestionnaireData = [];
   bool _isLoading = true;
-  // bool _isInitialLoad = true; // Hapus flag ini karena didChangeDependencies akan mengatasi
+  // Ini adalah GlobalKey baru untuk memicu refresh data dari luar
+  final GlobalKey<_SummaryScreenState> summaryScreenKey = GlobalKey<_SummaryScreenState>();
+
 
   @override
   bool get wantKeepAlive => true; // Menjaga state daftar tetap hidup saat berpindah tab
@@ -1094,14 +1097,12 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
     // Gunakan Future.microtask untuk memastikan `_loadQuestionnaireData` dipanggil
     // setelah frame saat ini selesai, menghindari konflik state.
     // Ini lebih andal untuk memuat ulang data saat tab berpindah dalam IndexedStack.
-    // Tambahkan log untuk melacak kapan ini dipanggil
-    // Perbaikan: Pastikan _loadQuestionnaireData tidak dipanggil berkali-kali jika sudah loading
-    if (!_isLoading) { // Cek jika tidak dalam kondisi loading
-      Future.microtask(() {
-        print('didChangeDependencies called in SummaryScreen. Attempting to reload questionnaire data.');
-        _loadQuestionnaireData();
-      });
-    }
+    // Perbaikan: Hapus _isLoading check agar selalu memuat ulang saat tab beralih
+    // Ini akan mengatasi masalah jika data baru disimpan di tab lain
+    Future.microtask(() {
+      print('didChangeDependencies called in SummaryScreen. Attempting to reload questionnaire data.');
+      _loadQuestionnaireData();
+    });
   }
 
 
@@ -1123,9 +1124,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
 
   /// Memuat semua data kuesioner dari SharedPreferences.
   Future<void> _loadQuestionnaireData() async {
-    // Pastikan kita tidak memuat dua kali secara bersamaan jika sudah dalam proses loading
-    if (_isLoading && _allQuestionnaireData.isNotEmpty) return; // Tambahkan kondisi ini untuk menghindari reload berlebihan
-
+    // Perbaikan: Jangan return jika _isLoading true, tapi atur isLoading secara lokal
     setState(() {
       _isLoading = true; // Set loading state
     });
@@ -1145,12 +1144,10 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
               return QuestionnaireData(); // Return a default empty data if parsing fails
             }
           })
-          // PERBAIKAN UTAMA: Hapus filter .where() ini sepenuhnya untuk debugging.
-          // Ini agar Anda bisa melihat apakah semua data muncul, termasuk yang namaGunung-nya null.
-          // Nanti bisa ditambahkan kembali jika memang ingin menyaring data tidak valid.
-          // .where((data) => data.namaGunung != null && data.namaGunung!.isNotEmpty)
+          // Hapus filter .where() sepenuhnya untuk debugging agar semua data yang diparse tampil.
+          // Jika nanti ingin filter data yang tidak lengkap, bisa ditambahkan kembali.
           .toList();
-      _isLoading = false;
+      _isLoading = false; // Matikan loading state setelah selesai
       print('Loaded ${_allQuestionnaireData.length} valid questionnaire entries.');
     });
   }
@@ -1295,6 +1292,11 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         title: const Text('Rekapitulasi Kuesioner'),
         automaticallyImplyLeading: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh), // Tombol Refresh
+            tooltip: 'Refresh Data',
+            onPressed: _isLoading ? null : () => _loadQuestionnaireData(), // Nonaktifkan saat loading
+          ),
           IconButton(
             icon: const Icon(Icons.download),
             tooltip: 'Ekspor ke CSV',
