@@ -166,7 +166,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             return QuestionnaireData.fromJson(jsonDecode(e));
           } catch (error) {
             print('Error decoding JSON from SharedPreferences: $error, Data: $e');
-            return QuestionnaireData(); // Return a default empty data if parsing fails
+            return QuestionnaireData();
           }
         })
         .toList();
@@ -175,7 +175,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
     List<String> updatedRawDataList =
         allData.map((e) => jsonEncode(e.toJson())).toList();
     await prefs.setStringList('questionnaires', updatedRawDataList);
-    print('Data saved to SharedPreferences. Total entries: ${updatedRawDataList.length}'); // Log saved data count
+    print('Data saved to SharedPreferences. Total entries: ${updatedRawDataList.length}');
   }
 
   void _submitForm() async {
@@ -207,6 +207,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
         upayaKeamanan: List.from(_currentData.upayaKeamanan),
         upayaKeamananLainnya: _currentData.upayaKeamananLainnya,
         fasilitasDibutuhkan: List.from(_currentData.fasilitasDibutuhkan),
+        // Perbaikan: Pastikan List.from digunakan untuk membuat list yang modifiable
         fasilitasLainnya: _currentData.fasilitasLainnya,
         ketersediaanFasilitas: _currentData.ketersediaanFasilitas,
         penilaianInfrastruktur: _currentData.penilaianInfrastruktur,
@@ -215,7 +216,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
         saranLain: _currentData.saranLain,
       );
 
-      print('Attempting to save: ${jsonEncode(dataToSave.toJson())}'); // Log data being saved
+      print('Attempting to save: ${jsonEncode(dataToSave.toJson())}');
       await _saveQuestionnaireData(dataToSave);
 
       if (mounted) {
@@ -247,25 +248,26 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+    return Padding( // Tambahkan Padding untuk seluruh konten
+      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Padding horizontal
       child: Form(
         key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView( // Ganti Column dengan ListView untuk scrolling otomatis
+          // crossAxisAlignment: CrossAxisAlignment.start, // Tidak perlu di ListView
           children: <Widget>[
+            const SizedBox(height: 16), // Spasi di atas
             const Text(
               'Mohon luangkan waktu Anda untuk mengisi kuesioner ini. Masukan Anda sangat berharga untuk peningkatan kualitas jalur pendakian di masa mendatang.',
               style: TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24), // Spasi setelah deskripsi
 
             /// --- Bagian 1: Informasi Umum ---
             Text(
               'Bagian 1: Informasi Umum',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const Divider(),
+            const Divider(height: 24, thickness: 1), // Divider dengan spasi
             TextFormField(
               decoration: const InputDecoration(
                 labelText: 'Apa nama gunung yang Anda daki?',
@@ -281,7 +283,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 _currentData.namaGunung = value;
               },
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16), // Spasi antar form field
             TextFormField(
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
@@ -301,7 +303,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 _currentData.frekuensiPendakian = int.tryParse(value!);
               },
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Text('Apa motivasi Anda melakukan pendakian? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -371,14 +373,14 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             /// --- Bagian 2: Jalur Pendakian ---
             Text(
               'Bagian 2: Jalur Pendakian',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const Divider(),
+            const Divider(height: 24, thickness: 1),
             Text('Jalur pendakian mana yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -414,7 +416,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Text('Bagaimana Anda mengetahui jalur pendakian yang Anda gunakan? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -484,7 +486,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Text('Apa yang Anda pikir tentang kondisi jalur pendakian yang Anda gunakan? (Kesulitan)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -520,7 +522,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Text('Apa yang Anda pikir tentang kondisi jalur pendakian yang Anda gunakan? (Perawatan)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -566,14 +568,14 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             /// --- Bagian 3: Keselamatan dan Keamanan ---
             Text(
               'Bagian 3: Keselamatan dan Keamanan',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const Divider(),
+            const Divider(height: 24, thickness: 1),
             Text('Apakah Anda pernah mengalami kecelakaan atau cedera saat melakukan pendakian?', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -601,7 +603,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             ),
             if (_currentData.pernahKecelakaan == true)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
+                padding: const EdgeInsets.only(left: 16.0, bottom: 8.0), // Padding di dalam
                 child: TextFormField(
                   controller: _penyebabKecelakaanController,
                   decoration: const InputDecoration(
@@ -610,7 +612,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   ),
                 ),
               ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Text('Bagaimana Anda menilai keselamatan dan keamanan jalur pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -666,7 +668,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Text('Apa yang Anda lakukan untuk memastikan keselamatan dan keamanan saat melakukan pendakian? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -762,14 +764,14 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             /// --- Bagian 4: Fasilitas dan Infrastruktur ---
             Text(
               'Bagian 4: Fasilitas dan Infrastruktur',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const Divider(),
+            const Divider(height: 24, thickness: 1),
             Text('Apa fasilitas yang Anda butuhkan saat melakukan pendakian? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -878,7 +880,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Text('Bagaimana Anda menilai ketersediaan fasilitas di jalur pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -934,7 +936,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Text('Apa yang Anda pikir tentang infrastruktur jalur pendakian yang Anda gunakan? (misalnya: jembatan, tangga, jalur setapak)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
@@ -990,14 +992,14 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             /// --- Bagian 5: Saran dan Kritik ---
             Text(
               'Bagian 5: Saran dan Kritik',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const Divider(),
+            const Divider(height: 24, thickness: 1),
             TextFormField(
               controller: _saranPerbaikanController,
               maxLines: 3,
@@ -1007,7 +1009,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _kritikController,
               maxLines: 3,
@@ -1017,7 +1019,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _saranLainController,
               maxLines: 3,
@@ -1027,7 +1029,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 32),
 
             Center(
               child: ElevatedButton(
@@ -1039,7 +1041,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 child: const Text('Kirim Kuesioner'),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 32), // Spasi di bawah tombol kirim
           ],
         ),
       ),
@@ -1066,7 +1068,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this); // Tambahkan observer
-    _loadQuestionnaireData();
+    _loadQuestionnaireData(); // Muat data awal
   }
 
   @override
@@ -1078,9 +1080,9 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Dipanggil saat status siklus hidup aplikasi berubah
+    // Jika aplikasi kembali dari background atau kembali dari halaman lain, muat ulang data
     if (state == AppLifecycleState.resumed) {
-      // Aplikasi kembali ke foreground, muat ulang data
-      print('App resumed. Reloading questionnaire data.'); // Log
+      print('App resumed. Reloading questionnaire data in SummaryScreen.');
       _loadQuestionnaireData();
     }
   }
@@ -1088,24 +1090,24 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
 
   /// Memuat semua data kuesioner dari SharedPreferences.
   Future<void> _loadQuestionnaireData() async {
-    print('Loading questionnaire data from SharedPreferences...'); // Log
+    print('Loading questionnaire data from SharedPreferences...');
     final prefs = await SharedPreferences.getInstance();
     List<String> rawDataList = prefs.getStringList('questionnaires') ?? [];
-    print('Raw data loaded: ${rawDataList.length} entries.'); // Log
+    print('Raw data loaded: ${rawDataList.length} entries.');
     setState(() {
       _allQuestionnaireData = rawDataList
           .map((e) {
             try {
               return QuestionnaireData.fromJson(jsonDecode(e));
             } catch (error) {
-              print('Error decoding JSON from SharedPreferences: $error, Data: $e'); // Log JSON errors
-              return QuestionnaireData(); // Return a default empty data if parsing fails
+              print('Error decoding JSON from SharedPreferences: $error, Data: $e');
+              return QuestionnaireData();
             }
           })
-          .where((data) => data.namaGunung != null && data.namaGunung!.isNotEmpty) // Filter out empty entries from errors
+          .where((data) => data.namaGunung != null && data.namaGunung!.isNotEmpty)
           .toList();
       _isLoading = false;
-      print('Loaded ${_allQuestionnaireData.length} valid questionnaire entries.'); // Log valid entries
+      print('Loaded ${_allQuestionnaireData.length} valid questionnaire entries.');
     });
   }
 
@@ -1121,7 +1123,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         const SnackBar(content: Text('Semua data rekapitulasi berhasil dihapus!')),
       );
     }
-    print('All data cleared from SharedPreferences.'); // Log
+    print('All data cleared from SharedPreferences.');
   }
 
   /// Mengekspor data kuesioner ke file CSV.
@@ -1166,7 +1168,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
             (i + 1), // Nomor urut
             data.namaGunung ?? '',
             data.frekuensiPendakian?.toString() ?? '',
-            data.motivasiPendakian.join('; '), // Gunakan semicolon atau koma, tergantung preferensi
+            data.motivasiPendakian.join('; '),
             data.motivasiLainnya ?? '',
             data.jalurPendakian ?? '',
             data.sumberInformasiJalur.join('; '),
@@ -1193,13 +1195,11 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         for (var row in csvData) {
           csvString += row.map((e) {
             String value = e.toString();
-            // Handle koma dalam string dengan mengapitnya dengan tanda kutip ganda
-            // dan meloloskan tanda kutip ganda internal
             if (value.contains(',') || value.contains(';') || value.contains('\n') || value.contains('"')) {
               value = '"${value.replaceAll('"', '""')}"';
             }
             return value;
-          }).join(','); // Delimiter bisa koma atau semicolon
+          }).join(',');
           csvString += '\n';
         }
 
@@ -1230,9 +1230,9 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
             SnackBar(content: Text('Data berhasil diekspor ke: $path')),
           );
         }
-        print('CSV exported to: $path'); // Log
+        print('CSV exported to: $path');
       } catch (e) {
-        print('Error exporting to CSV: $e'); // Log error
+        print('Error exporting to CSV: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Terjadi kesalahan saat mengekspor data: $e')),
@@ -1255,7 +1255,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rekapitulasi Kuesioner'),
-        automaticallyImplyLeading: false, // Sembunyikan tombol back di SummaryScreen
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.download),
@@ -1282,7 +1282,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
               : RefreshIndicator(
                   onRefresh: _loadQuestionnaireData,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(16.0), // Padding Listview
                     itemCount: _allQuestionnaireData.length,
                     itemBuilder: (context, index) {
                       final data = _allQuestionnaireData[index];
@@ -1290,7 +1290,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
                         margin: const EdgeInsets.only(bottom: 16.0),
                         elevation: 4,
                         child: Padding(
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(16.0), // Padding di dalam Card
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1350,7 +1350,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
   /// Helper widget untuk menampilkan baris informasi di rekapitulasi.
   Widget _buildInfoRow(String title, String? value, {bool isMultiline = false}) {
     if (value == null || value.isEmpty) {
-      return const SizedBox.shrink(); // Sembunyikan jika tidak ada nilai
+      return const SizedBox.shrink();
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
