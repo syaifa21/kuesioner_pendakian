@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart'; // Import for path
-import 'package:permission_handler/permission_handler.dart'; // Import for permissions
-import 'dart:io'; // For File operations
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
+import 'dart:core';
+import 'dart:io' show Platform;
+import 'dart:convert' show utf8;
+
 
 /// --- Model Data Kuesioner ---
-/// Kelas ini merepresentasikan struktur data satu entri kuesioner.
 class QuestionnaireData {
   String? namaGunung;
   int? frekuensiPendakian;
@@ -54,7 +57,6 @@ class QuestionnaireData {
     this.saranLain,
   });
 
-  // Konversi objek QuestionnaireData ke format JSON (Map<String, dynamic>)
   Map<String, dynamic> toJson() => {
     'namaGunung': namaGunung,
     'frekuensiPendakian': frekuensiPendakian,
@@ -79,7 +81,6 @@ class QuestionnaireData {
     'saranLain': saranLain,
   };
 
-  // Buat objek QuestionnaireData dari format JSON (Map<String, dynamic>)
   factory QuestionnaireData.fromJson(Map<String, dynamic> json) {
     return QuestionnaireData(
       namaGunung: json['namaGunung'],
@@ -108,7 +109,6 @@ class QuestionnaireData {
 }
 
 /// --- Halaman Input Kuesioner ---
-/// Widget ini memungkinkan pengguna mengisi dan menyimpan data kuesioner baru.
 class QuestionnaireScreen extends StatefulWidget {
   const QuestionnaireScreen({super.key});
 
@@ -119,10 +119,8 @@ class QuestionnaireScreen extends StatefulWidget {
 class _QuestionnaireScreenState extends State<QuestionnaireScreen> with AutomaticKeepAliveClientMixin {
   final _formKey = GlobalKey<FormState>();
 
-  // Instance untuk menyimpan data kuesioner saat ini
-  final QuestionnaireData _currentData = QuestionnaireData();
+  QuestionnaireData _currentData = QuestionnaireData();
 
-  // TextControllers untuk input teks "Lainnya" dan saran/kritik
   final TextEditingController _motivasiLainnyaController = TextEditingController();
   final TextEditingController _sumberInformasiLainnyaController = TextEditingController();
   final TextEditingController _penyebabKecelakaanController = TextEditingController();
@@ -133,7 +131,18 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
   final TextEditingController _saranLainController = TextEditingController();
 
   @override
-  bool get wantKeepAlive => true; // Menjaga state form tetap hidup saat berpindah tab
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentData = QuestionnaireData(
+      motivasiPendakian: [],
+      sumberInformasiJalur: [],
+      upayaKeamanan: [],
+      fasilitasDibutuhkan: [],
+    );
+  }
 
   @override
   void dispose() {
@@ -148,21 +157,27 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
     super.dispose();
   }
 
-  /// Menyimpan data kuesioner ke SharedPreferences.
-  /// Data akan ditambahkan ke daftar yang sudah ada.
   Future<void> _saveQuestionnaireData(QuestionnaireData data) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> rawDataList = prefs.getStringList('questionnaires') ?? [];
     List<QuestionnaireData> allData = rawDataList
-        .map((e) => QuestionnaireData.fromJson(jsonDecode(e)))
+        .map((e) {
+          try {
+            return QuestionnaireData.fromJson(jsonDecode(e));
+          } catch (error) {
+            print('Error decoding JSON from SharedPreferences: $error, Data: $e');
+            return QuestionnaireData(); // Return a default empty data if parsing fails
+          }
+        })
         .toList();
+
     allData.add(data);
     List<String> updatedRawDataList =
         allData.map((e) => jsonEncode(e.toJson())).toList();
     await prefs.setStringList('questionnaires', updatedRawDataList);
+    print('Data saved to SharedPreferences. Total entries: ${updatedRawDataList.length}'); // Log saved data count
   }
 
-  /// Fungsi untuk menangani pengiriman form kuesioner.
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -176,7 +191,32 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
       _currentData.kritik = _kritikController.text;
       _currentData.saranLain = _saranLainController.text;
 
-      await _saveQuestionnaireData(_currentData);
+      QuestionnaireData dataToSave = QuestionnaireData(
+        namaGunung: _currentData.namaGunung,
+        frekuensiPendakian: _currentData.frekuensiPendakian,
+        motivasiPendakian: List.from(_currentData.motivasiPendakian),
+        motivasiLainnya: _currentData.motivasiLainnya,
+        jalurPendakian: _currentData.jalurPendakian,
+        sumberInformasiJalur: List.from(_currentData.sumberInformasiJalur),
+        sumberInformasiLainnya: _currentData.sumberInformasiLainnya,
+        kondisiJalurKesulitan: _currentData.kondisiJalurKesulitan,
+        kondisiJalurPerawatan: _currentData.kondisiJalurPerawatan,
+        pernahKecelakaan: _currentData.pernahKecelakaan,
+        penyebabKecelakaan: _currentData.penyebabKecelakaan,
+        penilaianKeamanan: _currentData.penilaianKeamanan,
+        upayaKeamanan: List.from(_currentData.upayaKeamanan),
+        upayaKeamananLainnya: _currentData.upayaKeamananLainnya,
+        fasilitasDibutuhkan: List.from(_currentData.fasilitasDibutuhkan),
+        fasilitasLainnya: _currentData.fasilitasLainnya,
+        ketersediaanFasilitas: _currentData.ketersediaanFasilitas,
+        penilaianInfrastruktur: _currentData.penilaianInfrastruktur,
+        saranPerbaikan: _currentData.saranPerbaikan,
+        kritik: _currentData.kritik,
+        saranLain: _currentData.saranLain,
+      );
+
+      print('Attempting to save: ${jsonEncode(dataToSave.toJson())}'); // Log data being saved
+      await _saveQuestionnaireData(dataToSave);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -184,30 +224,14 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
         );
       }
 
-      // Reset form dan state untuk input berikutnya
       _formKey.currentState!.reset();
       setState(() {
-        _currentData.namaGunung = null;
-        _currentData.frekuensiPendakian = null;
-        _currentData.motivasiPendakian = [];
-        _currentData.motivasiLainnya = null;
-        _currentData.jalurPendakian = null;
-        _currentData.sumberInformasiJalur = [];
-        _currentData.sumberInformasiLainnya = null;
-        _currentData.kondisiJalurKesulitan = null;
-        _currentData.kondisiJalurPerawatan = null;
-        _currentData.pernahKecelakaan = null;
-        _currentData.penyebabKecelakaan = null;
-        _currentData.penilaianKeamanan = null;
-        _currentData.upayaKeamanan = [];
-        _currentData.upayaKeamananLainnya = null;
-        _currentData.fasilitasDibutuhkan = [];
-        _currentData.fasilitasLainnya = null;
-        _currentData.ketersediaanFasilitas = null;
-        _currentData.penilaianInfrastruktur = null;
-        _currentData.saranPerbaikan = null;
-        _currentData.kritik = null;
-        _currentData.saranLain = null;
+        _currentData = QuestionnaireData(
+          motivasiPendakian: [],
+          sumberInformasiJalur: [],
+          upayaKeamanan: [],
+          fasilitasDibutuhkan: [],
+        );
       });
       _motivasiLainnyaController.clear();
       _sumberInformasiLainnyaController.clear();
@@ -222,7 +246,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Penting untuk AutomaticKeepAliveClientMixin
+    super.build(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
@@ -394,7 +418,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             Text('Bagaimana Anda mengetahui jalur pendakian yang Anda gunakan? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
-                CheckboxListTile( // Ini tetap Checkbox karena bisa pilih lebih dari satu sumber info
+                CheckboxListTile(
                   title: const Text('Internet (website, media sosial)'),
                   value: _currentData.sumberInformasiJalur.contains('Internet (website, media sosial)'),
                   onChanged: (bool? value) {
@@ -864,7 +888,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   groupValue: _currentData.ketersediaanFasilitas,
                   onChanged: (String? value) {
                     setState(() {
-                      _currentData.ketersediaanFasilitas = value; // Perbaikan typo di sini!
+                      _currentData.ketersediaanFasilitas = value;
                     });
                   },
                 ),
@@ -904,7 +928,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   groupValue: _currentData.ketersediaanFasilitas,
                   onChanged: (String? value) {
                     setState(() {
-                      _currentData.ketersediaanFasilitas = value; // Perbaikan typo di sini!
+                      _currentData.ketersediaanFasilitas = value;
                     });
                   },
                 ),
@@ -1031,7 +1055,7 @@ class SummaryScreen extends StatefulWidget {
   State<SummaryScreen> createState() => _SummaryScreenState();
 }
 
-class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveClientMixin {
+class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   List<QuestionnaireData> _allQuestionnaireData = [];
   bool _isLoading = true;
 
@@ -1041,18 +1065,47 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // Tambahkan observer
     _loadQuestionnaireData();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // Hapus observer
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Dipanggil saat status siklus hidup aplikasi berubah
+    if (state == AppLifecycleState.resumed) {
+      // Aplikasi kembali ke foreground, muat ulang data
+      print('App resumed. Reloading questionnaire data.'); // Log
+      _loadQuestionnaireData();
+    }
+  }
+
+
   /// Memuat semua data kuesioner dari SharedPreferences.
   Future<void> _loadQuestionnaireData() async {
+    print('Loading questionnaire data from SharedPreferences...'); // Log
     final prefs = await SharedPreferences.getInstance();
     List<String> rawDataList = prefs.getStringList('questionnaires') ?? [];
+    print('Raw data loaded: ${rawDataList.length} entries.'); // Log
     setState(() {
       _allQuestionnaireData = rawDataList
-          .map((e) => QuestionnaireData.fromJson(jsonDecode(e)))
+          .map((e) {
+            try {
+              return QuestionnaireData.fromJson(jsonDecode(e));
+            } catch (error) {
+              print('Error decoding JSON from SharedPreferences: $error, Data: $e'); // Log JSON errors
+              return QuestionnaireData(); // Return a default empty data if parsing fails
+            }
+          })
+          .where((data) => data.namaGunung != null && data.namaGunung!.isNotEmpty) // Filter out empty entries from errors
           .toList();
       _isLoading = false;
+      print('Loaded ${_allQuestionnaireData.length} valid questionnaire entries.'); // Log valid entries
     });
   }
 
@@ -1068,6 +1121,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         const SnackBar(content: Text('Semua data rekapitulasi berhasil dihapus!')),
       );
     }
+    print('All data cleared from SharedPreferences.'); // Log
   }
 
   /// Mengekspor data kuesioner ke file CSV.
@@ -1140,17 +1194,23 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
           csvString += row.map((e) {
             String value = e.toString();
             // Handle koma dalam string dengan mengapitnya dengan tanda kutip ganda
-            if (value.contains(',') || value.contains(';') || value.contains('\n')) {
-              value = '"${value.replaceAll('"', '""')}"'; // Escaping double quotes
+            // dan meloloskan tanda kutip ganda internal
+            if (value.contains(',') || value.contains(';') || value.contains('\n') || value.contains('"')) {
+              value = '"${value.replaceAll('"', '""')}"';
             }
             return value;
           }).join(','); // Delimiter bisa koma atau semicolon
           csvString += '\n';
         }
 
-
-        // Menyimpan File CSV
-        final directory = await getExternalStorageDirectory(); // Untuk penyimpanan eksternal Android
+        // Menentukan direktori penyimpanan
+        Directory? directory;
+        if (Platform.isAndroid) {
+          directory = await getExternalStorageDirectory();
+        } else if (Platform.isIOS) {
+          directory = await getApplicationDocumentsDirectory();
+        }
+        
         if (directory == null) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -1163,15 +1223,16 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         final path = '${directory.path}/Rekapitulasi_Kuesioner_Pendakian.csv';
         final file = File(path);
 
-        await file.writeAsString(csvString, encoding: utf8); // Encoding UTF-8 untuk karakter khusus
+        await file.writeAsString(csvString, encoding: utf8);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Data berhasil diekspor ke: $path')),
           );
         }
+        print('CSV exported to: $path'); // Log
       } catch (e) {
-        print('Error exporting to CSV: $e');
+        print('Error exporting to CSV: $e'); // Log error
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Terjadi kesalahan saat mengekspor data: $e')),
@@ -1190,21 +1251,21 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Penting untuk AutomaticKeepAliveClientMixin
-    return Scaffold( // Ganti Column menjadi Scaffold
-      appBar: AppBar( // Pindahkan AppBar ke sini untuk halaman SummaryScreen
+    super.build(context);
+    return Scaffold(
+      appBar: AppBar(
         title: const Text('Rekapitulasi Kuesioner'),
         automaticallyImplyLeading: false, // Sembunyikan tombol back di SummaryScreen
         actions: [
           IconButton(
             icon: const Icon(Icons.download),
-            tooltip: 'Ekspor ke CSV', // Ubah tooltip
-            onPressed: _allQuestionnaireData.isEmpty ? null : () => _exportToCsv(), // Panggil fungsi ekspor CSV
+            tooltip: 'Ekspor ke CSV',
+            onPressed: _allQuestionnaireData.isEmpty ? null : () => _exportToCsv(),
           ),
           IconButton(
             icon: const Icon(Icons.delete_forever),
             tooltip: 'Hapus Semua Data',
-            onPressed: _allQuestionnaireData.isEmpty ? null : () => _clearAllData(), // Nonaktifkan jika data kosong
+            onPressed: _allQuestionnaireData.isEmpty ? null : () => _clearAllData(),
           ),
         ],
       ),
@@ -1218,7 +1279,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
                     textAlign: TextAlign.center,
                   ),
                 )
-              : RefreshIndicator( // Tambahkan RefreshIndicator agar bisa pull to refresh data
+              : RefreshIndicator(
                   onRefresh: _loadQuestionnaireData,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16.0),
