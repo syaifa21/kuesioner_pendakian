@@ -283,7 +283,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             const Divider(height: 24, thickness: 1),
             TextFormField(
               decoration: const InputDecoration(
-                labelText: 'Apa nama gunung yang Anda daki?',
+                labelText: 'Apa nama ODTW/Jalur Pendakian yang anda kunjungi?',
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
@@ -293,7 +293,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               },
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Mohon masukkan nama gunung';
+                  return 'Mohon masukkan namanya';
                 }
                 return null;
               },
@@ -302,7 +302,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             TextFormField(
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Berapa kali Anda melakukan pendakian dalam setahun?',
+                labelText: 'Berapa kali Anda berkunjung dalam setahun?',
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
@@ -312,7 +312,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               },
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Mohon masukkan frekuensi pendakian';
+                  return 'Mohon masukkan frekuensi ';
                 }
                 if (int.tryParse(value) == null) {
                   return 'Mohon masukkan angka yang valid';
@@ -321,7 +321,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               },
             ),
             const SizedBox(height: 16),
-            Text('Apa motivasi Anda melakukan pendakian? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
+            Text('Apa motivasi Anda berkunjung? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
                 CheckboxListTile(
@@ -556,16 +556,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 RadioListTile<String>(
                   title: const Text('Cukup terawat'),
                   value: 'cukup_terawat',
-                  groupValue: _currentData.kondisiJalurPerawatan,
-                  onChanged: (String? value) {
-                    setState(() {
-                      _currentData.kondisiJalurPerawatan = value;
-                    });
-                  },
-                ),
-                RadioListTile<String>(
-                  title: const Text('Kurang terawat'),
-                  value: 'kurang_terawat',
                   groupValue: _currentData.kondisiJalurPerawatan,
                   onChanged: (String? value) {
                     setState(() {
@@ -1394,4 +1384,4 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
       ),
     );
   }
-}
+} 
