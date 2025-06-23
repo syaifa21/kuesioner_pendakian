@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
-import 'dart:core';
-import 'dart:io' show Platform;
-import 'dart:convert' show utf8;
+import 'package:path_provider/path_provider.dart'; // Import for path
+import 'package:permission_handler/permission_handler.dart'; // Import for permissions
+import 'dart:io'; // For File operations
+import 'dart:core'; // For basic types like String, bool, int
+import 'dart:io' show Platform; // For checking platform (optional for debugging paths)
+import 'dart:convert' show utf8; // For CSV encoding
 
 
 /// --- Model Data Kuesioner ---
+/// Kelas ini merepresentasikan struktur data satu entri kuesioner.
 class QuestionnaireData {
   String? namaGunung;
   int? frekuensiPendakian;
   List<String> motivasiPendakian;
   String? motivasiLainnya;
-  String? jalurPendakian;
-  List<String> sumberInformasiJalur;
+  String? jalurPendakian; // Ini tetap radio (single choice)
+  List<String> sumberInformasiJalur; // Ini harusnya checkbox (multi choice)
   String? sumberInformasiLainnya;
   String? kondisiJalurKesulitan;
   String? kondisiJalurPerawatan;
@@ -157,6 +158,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
     super.dispose();
   }
 
+  /// Menyimpan data kuesioner ke SharedPreferences.
   Future<void> _saveQuestionnaireData(QuestionnaireData data) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> rawDataList = prefs.getStringList('questionnaires') ?? [];
@@ -165,7 +167,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
           try {
             return QuestionnaireData.fromJson(jsonDecode(e));
           } catch (error) {
-            print('Error decoding JSON from SharedPreferences: $error, Data: $e');
+            print('Error decoding JSON from SharedPreferences (save): $error, Data: $e');
             return QuestionnaireData();
           }
         })
@@ -175,6 +177,8 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
     List<String> updatedRawDataList =
         allData.map((e) => jsonEncode(e.toJson())).toList();
     await prefs.setStringList('questionnaires', updatedRawDataList);
+    bool committed = await prefs.commit(); // Explicitly commit changes
+    print('SharedPreferences committed: $committed');
     print('Data saved to SharedPreferences. Total entries: ${updatedRawDataList.length}');
   }
 
@@ -207,7 +211,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
         upayaKeamanan: List.from(_currentData.upayaKeamanan),
         upayaKeamananLainnya: _currentData.upayaKeamananLainnya,
         fasilitasDibutuhkan: List.from(_currentData.fasilitasDibutuhkan),
-        // Perbaikan: Pastikan List.from digunakan untuk membuat list yang modifiable
         fasilitasLainnya: _currentData.fasilitasLainnya,
         ketersediaanFasilitas: _currentData.ketersediaanFasilitas,
         penilaianInfrastruktur: _currentData.penilaianInfrastruktur,
@@ -216,8 +219,11 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
         saranLain: _currentData.saranLain,
       );
 
-      print('Attempting to save: ${jsonEncode(dataToSave.toJson())}');
+      print('Data to be saved: ${jsonEncode(dataToSave.toJson())}');
       await _saveQuestionnaireData(dataToSave);
+
+      // Tambahkan delay kecil setelah penyimpanan untuk memastikan data ditulis ke disk
+      await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,54 +248,65 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
       _saranPerbaikanController.clear();
       _kritikController.clear();
       _saranLainController.clear();
+    } else {
+      print('Form validation failed.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mohon lengkapi semua bidang yang wajib diisi.')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Padding( // Tambahkan Padding untuk seluruh konten
-      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Padding horizontal
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Form(
         key: _formKey,
-        child: ListView( // Ganti Column dengan ListView untuk scrolling otomatis
-          // crossAxisAlignment: CrossAxisAlignment.start, // Tidak perlu di ListView
+        child: ListView(
           children: <Widget>[
-            const SizedBox(height: 16), // Spasi di atas
+            const SizedBox(height: 16),
             const Text(
               'Mohon luangkan waktu Anda untuk mengisi kuesioner ini. Masukan Anda sangat berharga untuk peningkatan kualitas jalur pendakian di masa mendatang.',
               style: TextStyle(fontSize: 16),
             ),
-            const SizedBox(height: 24), // Spasi setelah deskripsi
+            const SizedBox(height: 24),
 
             /// --- Bagian 1: Informasi Umum ---
             Text(
               'Bagian 1: Informasi Umum',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const Divider(height: 24, thickness: 1), // Divider dengan spasi
+            const Divider(height: 24, thickness: 1),
             TextFormField(
               decoration: const InputDecoration(
                 labelText: 'Apa nama gunung yang Anda daki?',
                 border: OutlineInputBorder(),
               ),
+              onChanged: (value) {
+                setState(() {
+                  _currentData.namaGunung = value;
+                });
+              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Mohon masukkan nama gunung';
                 }
                 return null;
               },
-              onSaved: (value) {
-                _currentData.namaGunung = value;
-              },
             ),
-            const SizedBox(height: 16), // Spasi antar form field
+            const SizedBox(height: 16),
             TextFormField(
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Berapa kali Anda melakukan pendakian dalam setahun?',
                 border: OutlineInputBorder(),
               ),
+              onChanged: (value) {
+                setState(() {
+                  _currentData.frekuensiPendakian = int.tryParse(value);
+                });
+              },
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Mohon masukkan frekuensi pendakian';
@@ -298,9 +315,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   return 'Mohon masukkan angka yang valid';
                 }
                 return null;
-              },
-              onSaved: (value) {
-                _currentData.frekuensiPendakian = int.tryParse(value!);
               },
             ),
             const SizedBox(height: 16),
@@ -373,7 +387,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                   ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             /// --- Bagian 2: Jalur Pendakian ---
             Text(
@@ -603,7 +617,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             ),
             if (_currentData.pernahKecelakaan == true)
               Padding(
-                padding: const EdgeInsets.only(left: 16.0, bottom: 8.0), // Padding di dalam
+                padding: const EdgeInsets.only(left: 16.0, bottom: 8.0),
                 child: TextFormField(
                   controller: _penyebabKecelakaanController,
                   decoration: const InputDecoration(
@@ -1041,7 +1055,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 child: const Text('Kirim Kuesioner'),
               ),
             ),
-            const SizedBox(height: 32), // Spasi di bawah tombol kirim
+            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -1060,6 +1074,7 @@ class SummaryScreen extends StatefulWidget {
 class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   List<QuestionnaireData> _allQuestionnaireData = [];
   bool _isLoading = true;
+  // bool _isInitialLoad = true; // Hapus flag ini karena didChangeDependencies akan mengatasi
 
   @override
   bool get wantKeepAlive => true; // Menjaga state daftar tetap hidup saat berpindah tab
@@ -1071,6 +1086,25 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
     _loadQuestionnaireData(); // Muat data awal
   }
 
+  // Dipanggil setiap kali dependensi widget berubah, termasuk saat widget ini
+  // kembali ke pohon widget (visible) dalam IndexedStack
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Gunakan Future.microtask untuk memastikan `_loadQuestionnaireData` dipanggil
+    // setelah frame saat ini selesai, menghindari konflik state.
+    // Ini lebih andal untuk memuat ulang data saat tab berpindah dalam IndexedStack.
+    // Tambahkan log untuk melacak kapan ini dipanggil
+    // Perbaikan: Pastikan _loadQuestionnaireData tidak dipanggil berkali-kali jika sudah loading
+    if (!_isLoading) { // Cek jika tidak dalam kondisi loading
+      Future.microtask(() {
+        print('didChangeDependencies called in SummaryScreen. Attempting to reload questionnaire data.');
+        _loadQuestionnaireData();
+      });
+    }
+  }
+
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this); // Hapus observer
@@ -1080,7 +1114,6 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Dipanggil saat status siklus hidup aplikasi berubah
-    // Jika aplikasi kembali dari background atau kembali dari halaman lain, muat ulang data
     if (state == AppLifecycleState.resumed) {
       print('App resumed. Reloading questionnaire data in SummaryScreen.');
       _loadQuestionnaireData();
@@ -1090,21 +1123,32 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
 
   /// Memuat semua data kuesioner dari SharedPreferences.
   Future<void> _loadQuestionnaireData() async {
+    // Pastikan kita tidak memuat dua kali secara bersamaan jika sudah dalam proses loading
+    if (_isLoading && _allQuestionnaireData.isNotEmpty) return; // Tambahkan kondisi ini untuk menghindari reload berlebihan
+
+    setState(() {
+      _isLoading = true; // Set loading state
+    });
+
     print('Loading questionnaire data from SharedPreferences...');
     final prefs = await SharedPreferences.getInstance();
     List<String> rawDataList = prefs.getStringList('questionnaires') ?? [];
-    print('Raw data loaded: ${rawDataList.length} entries.');
+    print('Raw data loaded: ${rawDataList.length} entries. Raw content: $rawDataList'); // Log raw content
     setState(() {
       _allQuestionnaireData = rawDataList
           .map((e) {
             try {
+              print('Attempting to parse JSON: $e');
               return QuestionnaireData.fromJson(jsonDecode(e));
             } catch (error) {
-              print('Error decoding JSON from SharedPreferences: $error, Data: $e');
-              return QuestionnaireData();
+              print('Error decoding JSON from SharedPreferences: $error, Data causing error: $e'); // Log JSON errors
+              return QuestionnaireData(); // Return a default empty data if parsing fails
             }
           })
-          .where((data) => data.namaGunung != null && data.namaGunung!.isNotEmpty)
+          // PERBAIKAN UTAMA: Hapus filter .where() ini sepenuhnya untuk debugging.
+          // Ini agar Anda bisa melihat apakah semua data muncul, termasuk yang namaGunung-nya null.
+          // Nanti bisa ditambahkan kembali jika memang ingin menyaring data tidak valid.
+          // .where((data) => data.namaGunung != null && data.namaGunung!.isNotEmpty)
           .toList();
       _isLoading = false;
       print('Loaded ${_allQuestionnaireData.length} valid questionnaire entries.');
@@ -1128,13 +1172,11 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
 
   /// Mengekspor data kuesioner ke file CSV.
   Future<void> _exportToCsv() async {
-    // Meminta Izin Penyimpanan
     var status = await Permission.storage.request();
     if (status.isGranted) {
       try {
         List<List<dynamic>> csvData = [];
 
-        // Menulis Header Kolom
         List<String> headers = [
           'No.',
           'Nama Gunung',
@@ -1161,11 +1203,10 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         ];
         csvData.add(headers);
 
-        // Menulis Data Kuesioner
         for (int i = 0; i < _allQuestionnaireData.length; i++) {
           final data = _allQuestionnaireData[i];
           csvData.add([
-            (i + 1), // Nomor urut
+            (i + 1),
             data.namaGunung ?? '',
             data.frekuensiPendakian?.toString() ?? '',
             data.motivasiPendakian.join('; '),
@@ -1190,7 +1231,6 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
           ]);
         }
 
-        // Konversi List<List<dynamic>> menjadi string CSV
         String csvString = '';
         for (var row in csvData) {
           csvString += row.map((e) {
@@ -1203,7 +1243,6 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
           csvString += '\n';
         }
 
-        // Menentukan direktori penyimpanan
         Directory? directory;
         if (Platform.isAndroid) {
           directory = await getExternalStorageDirectory();
@@ -1240,7 +1279,6 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         }
       }
     } else {
-      // Izin ditolak
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Izin penyimpanan ditolak. Tidak dapat mengekspor data.')),
@@ -1282,7 +1320,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
               : RefreshIndicator(
                   onRefresh: _loadQuestionnaireData,
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16.0), // Padding Listview
+                    padding: const EdgeInsets.all(16.0),
                     itemCount: _allQuestionnaireData.length,
                     itemBuilder: (context, index) {
                       final data = _allQuestionnaireData[index];
@@ -1290,7 +1328,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
                         margin: const EdgeInsets.only(bottom: 16.0),
                         elevation: 4,
                         child: Padding(
-                          padding: const EdgeInsets.all(16.0), // Padding di dalam Card
+                          padding: const EdgeInsets.all(16.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1350,7 +1388,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
   /// Helper widget untuk menampilkan baris informasi di rekapitulasi.
   Widget _buildInfoRow(String title, String? value, {bool isMultiline = false}) {
     if (value == null || value.isEmpty) {
-      return const SizedBox.shrink();
+      return const SizedBox.shrink(); // Sembunyikan jika tidak ada nilai
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
