@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart'; // Import for path
+import 'package:path_provider/path_provider.dart'; // Import for general path_provider methods
 import 'package:permission_handler/permission_handler.dart'; // Import for permissions
 import 'dart:io'; // For File operations
-import 'dart:core'; // For basic types like String, bool, int
-import 'dart:io' show Platform; // For checking platform (optional for debugging paths)
-import 'dart:convert' show utf8; // For CSV encoding
+import 'dart:core';
+import 'dart:io' show Platform;
+import 'dart:convert' show utf8;
+
+// Tambahkan import ini untuk path_provider_android
+import 'package:path_provider_android/path_provider_android.dart';
 
 
 /// --- Model Data Kuesioner ---
@@ -390,13 +393,13 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             ),
             const SizedBox(height: 20),
 
-            /// --- Bagian 2: Jalur Pendakian ---
+            /// --- Bagian 2: ODTW/Jalur Pendakian ---
             Text(
-              'Bagian 2: Jalur Pendakian',
+              'Bagian 2: ODTW/Jalur Pendakian', // Ganti nama
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const Divider(height: 24, thickness: 1),
-            Text('Jalur pendakian mana yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
+            Text('ODTW/Jalur Pendakian mana yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
             Column(
               children: [
                 RadioListTile<String>(
@@ -432,7 +435,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Bagaimana Anda mengetahui jalur pendakian yang Anda gunakan? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
+            Text('Bagaimana Anda mengetahui ODTW/Jalur Pendakian yang Anda gunakan? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
             Column(
               children: [
                 CheckboxListTile(
@@ -502,7 +505,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Apa yang Anda pikir tentang kondisi jalur pendakian yang Anda gunakan? (Kesulitan)', style: Theme.of(context).textTheme.titleMedium),
+            Text('Apa yang Anda pikir tentang kondisi ODTW/Jalur Pendakian yang Anda gunakan? (Kesulitan)', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
             Column(
               children: [
                 RadioListTile<String>(
@@ -538,7 +541,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Apa yang Anda pikir tentang kondisi jalur pendakian yang Anda gunakan? (Perawatan)', style: Theme.of(context).textTheme.titleMedium),
+            Text('Apa yang Anda pikir tentang kondisi ODTW/Jalur Pendakian yang Anda gunakan? (Perawatan)', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
             Column(
               children: [
                 RadioListTile<String>(
@@ -628,7 +631,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 ),
               ),
             const SizedBox(height: 16),
-            Text('Bagaimana Anda menilai keselamatan dan keamanan jalur pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
+            Text('Bagaimana Anda menilai keselamatan dan keamanan ODTW/Jalur Pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
             Column(
               children: [
                 RadioListTile<String>(
@@ -896,7 +899,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Bagaimana Anda menilai ketersediaan fasilitas di jalur pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
+            Text('Bagaimana Anda menilai ketersediaan fasilitas di ODTW/Jalur Pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
             Column(
               children: [
                 RadioListTile<String>(
@@ -952,7 +955,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Apa yang Anda pikir tentang infrastruktur jalur pendakian yang Anda gunakan? (misalnya: jembatan, tangga, jalur setapak)', style: Theme.of(context).textTheme.titleMedium),
+            Text('Apa yang Anda pikir tentang infrastruktur ODTW/Jalur Pendakian yang Anda gunakan? (misalnya: jembatan, tangga, jalur setapak)', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
             Column(
               children: [
                 RadioListTile<String>(
@@ -1017,9 +1020,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             const Divider(height: 24, thickness: 1),
             TextFormField(
               controller: _saranPerbaikanController,
-              maxLines: 3,
+              minLines: 3, // Minimal 3 baris
+              maxLines: null, // Bisa meluas tanpa batas
               decoration: const InputDecoration(
-                labelText: 'Apa saran Anda untuk memperbaiki jalur pendakian yang Anda gunakan?',
+                labelText: 'Saran perbaikan ODTW/Jalur Pendakian?', // Disikat
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -1027,9 +1031,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             const SizedBox(height: 16),
             TextFormField(
               controller: _kritikController,
-              maxLines: 3,
+              minLines: 3, // Minimal 3 baris
+              maxLines: null, // Bisa meluas tanpa batas
               decoration: const InputDecoration(
-                labelText: 'Apa kritik Anda terhadap jalur pendakian yang Anda gunakan?',
+                labelText: 'Kritik terhadap ODTW/Jalur Pendakian?', // Disikat
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -1037,9 +1042,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             const SizedBox(height: 16),
             TextFormField(
               controller: _saranLainController,
-              maxLines: 3,
+              minLines: 3, // Minimal 3 baris
+              maxLines: null, // Bisa meluas tanpa batas
               decoration: const InputDecoration(
-                labelText: 'Apakah Anda memiliki saran lain terkait pendakian atau jalur pendakian?',
+                labelText: 'Saran lain terkait pendakian/ODTW/Jalur Pendakian?', // Disikat
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -1075,9 +1081,6 @@ class SummaryScreen extends StatefulWidget {
 class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   List<QuestionnaireData> _allQuestionnaireData = [];
   bool _isLoading = true;
-  // Ini adalah GlobalKey baru untuk memicu refresh data dari luar
-  final GlobalKey<_SummaryScreenState> summaryScreenKey = GlobalKey<_SummaryScreenState>();
-
 
   @override
   bool get wantKeepAlive => true; // Menjaga state daftar tetap hidup saat berpindah tab
@@ -1094,17 +1097,17 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Gunakan Future.microtask untuk memastikan `_loadQuestionnaireData` dipanggil
-    // setelah frame saat ini selesai, menghindari konflik state.
-    // Ini lebih andal untuk memuat ulang data saat tab berpindah dalam IndexedStack.
-    // Perbaikan: Hapus _isLoading check agar selalu memuat ulang saat tab beralih
-    // Ini akan mengatasi masalah jika data baru disimpan di tab lain
+    if (!mounted || _isLoading) return;
+
+    // Tambahkan penundaan singkat untuk memberi waktu data di SharedPreferences untuk disinkronkan.
+    // Ini membantu mengatasi masalah data tidak langsung terbaca setelah disimpan dari tab lain.
     Future.microtask(() {
-      print('didChangeDependencies called in SummaryScreen. Attempting to reload questionnaire data.');
-      _loadQuestionnaireData();
+      print('didChangeDependencies called in SummaryScreen. Attempting to reload questionnaire data after a short delay.');
+      Future.delayed(const Duration(milliseconds: 100)).then((_) {
+        _loadQuestionnaireData();
+      });
     });
   }
-
 
   @override
   void dispose() {
@@ -1114,25 +1117,27 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Dipanggil saat status siklus hidup aplikasi berubah
     if (state == AppLifecycleState.resumed) {
       print('App resumed. Reloading questionnaire data in SummaryScreen.');
       _loadQuestionnaireData();
     }
   }
 
-
   /// Memuat semua data kuesioner dari SharedPreferences.
   Future<void> _loadQuestionnaireData() async {
-    // Perbaikan: Jangan return jika _isLoading true, tapi atur isLoading secara lokal
+    if (_isLoading && _allQuestionnaireData.isNotEmpty) {
+      print('Already loading or data present, skipping reload.');
+      return;
+    }
+
     setState(() {
-      _isLoading = true; // Set loading state
+      _isLoading = true;
     });
 
     print('Loading questionnaire data from SharedPreferences...');
     final prefs = await SharedPreferences.getInstance();
     List<String> rawDataList = prefs.getStringList('questionnaires') ?? [];
-    print('Raw data loaded: ${rawDataList.length} entries. Raw content: $rawDataList'); // Log raw content
+    print('Raw data loaded: ${rawDataList.length} entries. Raw content: $rawDataList');
     setState(() {
       _allQuestionnaireData = rawDataList
           .map((e) {
@@ -1140,14 +1145,12 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
               print('Attempting to parse JSON: $e');
               return QuestionnaireData.fromJson(jsonDecode(e));
             } catch (error) {
-              print('Error decoding JSON from SharedPreferences: $error, Data causing error: $e'); // Log JSON errors
-              return QuestionnaireData(); // Return a default empty data if parsing fails
+              print('Error decoding JSON from SharedPreferences: $error, Data causing error: $e');
+              return QuestionnaireData();
             }
           })
-          // Hapus filter .where() sepenuhnya untuk debugging agar semua data yang diparse tampil.
-          // Jika nanti ingin filter data yang tidak lengkap, bisa ditambahkan kembali.
-          .toList();
-      _isLoading = false; // Matikan loading state setelah selesai
+          .toList(); // Hapus filter .where() untuk melihat semua data
+      _isLoading = false;
       print('Loaded ${_allQuestionnaireData.length} valid questionnaire entries.');
     });
   }
@@ -1169,116 +1172,144 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
 
   /// Mengekspor data kuesioner ke file CSV.
   Future<void> _exportToCsv() async {
+    // Meminta Izin Penyimpanan
+    // Minta izin WRITE_EXTERNAL_STORAGE. permission_handler akan menangani dialog.
     var status = await Permission.storage.request();
-    if (status.isGranted) {
-      try {
-        List<List<dynamic>> csvData = [];
 
-        List<String> headers = [
-          'No.',
-          'Nama Gunung',
-          'Frekuensi Pendakian',
-          'Motivasi Pendakian',
-          'Motivasi Lainnya',
-          'Jalur Pendakian',
-          'Sumber Informasi Jalur',
-          'Sumber Informasi Lainnya',
-          'Kondisi Jalur (Kesulitan)',
-          'Kondisi Jalur (Perawatan)',
-          'Pernah Kecelakaan',
-          'Penyebab Kecelakaan',
-          'Penilaian Keamanan',
-          'Upaya Keamanan',
-          'Upaya Keamanan Lainnya',
-          'Fasilitas Dibutuhkan',
-          'Fasilitas Lainnya',
-          'Ketersediaan Fasilitas',
-          'Penilaian Infrastruktur',
-          'Saran Perbaikan',
-          'Kritik',
-          'Saran Lain',
-        ];
-        csvData.add(headers);
-
-        for (int i = 0; i < _allQuestionnaireData.length; i++) {
-          final data = _allQuestionnaireData[i];
-          csvData.add([
-            (i + 1),
-            data.namaGunung ?? '',
-            data.frekuensiPendakian?.toString() ?? '',
-            data.motivasiPendakian.join('; '),
-            data.motivasiLainnya ?? '',
-            data.jalurPendakian ?? '',
-            data.sumberInformasiJalur.join('; '),
-            data.sumberInformasiLainnya ?? '',
-            data.kondisiJalurKesulitan ?? '',
-            data.kondisiJalurPerawatan ?? '',
-            (data.pernahKecelakaan == true ? 'Ya' : 'Tidak'),
-            data.penyebabKecelakaan ?? '',
-            data.penilaianKeamanan ?? '',
-            data.upayaKeamanan.join('; '),
-            data.upayaKeamananLainnya ?? '',
-            data.fasilitasDibutuhkan.join('; '),
-            data.fasilitasLainnya ?? '',
-            data.ketersediaanFasilitas ?? '',
-            data.penilaianInfrastruktur ?? '',
-            data.saranPerbaikan ?? '',
-            data.kritik ?? '',
-            data.saranLain ?? '',
-          ]);
-        }
-
-        String csvString = '';
-        for (var row in csvData) {
-          csvString += row.map((e) {
-            String value = e.toString();
-            if (value.contains(',') || value.contains(';') || value.contains('\n') || value.contains('"')) {
-              value = '"${value.replaceAll('"', '""')}"';
-            }
-            return value;
-          }).join(',');
-          csvString += '\n';
-        }
-
-        Directory? directory;
-        if (Platform.isAndroid) {
-          directory = await getExternalStorageDirectory();
-        } else if (Platform.isIOS) {
-          directory = await getApplicationDocumentsDirectory();
-        }
-        
-        if (directory == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Direktori penyimpanan tidak dapat diakses.')),
-            );
-          }
-          return;
-        }
-
-        final path = '${directory.path}/Rekapitulasi_Kuesioner_Pendakian.csv';
-        final file = File(path);
-
-        await file.writeAsString(csvString, encoding: utf8);
-
+    if (!status.isGranted) { // Jika izin belum diberikan atau ditolak
+      // Coba buka pengaturan aplikasi jika izin ditolak permanen
+      if (await Permission.storage.isPermanentlyDenied) {
+        openAppSettings(); // Membuka pengaturan izin aplikasi
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Data berhasil diekspor ke: $path')),
+            const SnackBar(content: Text('Izin penyimpanan diperlukan. Mohon izinkan di pengaturan aplikasi.')),
           );
         }
-        print('CSV exported to: $path');
-      } catch (e) {
-        print('Error exporting to CSV: $e');
+      } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Terjadi kesalahan saat mengekspor data: $e')),
+            const SnackBar(content: Text('Izin penyimpanan ditolak. Tidak dapat mengekspor data.')),
           );
         }
       }
-    } else {
+      return; // Hentikan ekspor jika izin tidak diberikan
+    }
+
+    // Jika izin granted
+    try {
+      List<List<dynamic>> csvData = [];
+
+      List<String> headers = [
+        'No.',
+        'Nama Gunung',
+        'Frekuensi Pendakian',
+        'Motivasi Pendakian',
+        'Motivasi Lainnya',
+        'ODTW/Jalur Pendakian',
+        'Sumber Informasi Jalur',
+        'Sumber Informasi Lainnya',
+        'Kondisi Jalur (Kesulitan)',
+        'Kondisi Jalur (Perawatan)',
+        'Pernah Kecelakaan',
+        'Penyebab Kecelakaan',
+        'Penilaian Keamanan',
+        'Upaya Keamanan',
+        'Upaya Keamanan Lainnya',
+        'Fasilitas Dibutuhkan',
+        'Fasilitas Lainnya',
+        'Ketersediaan Fasilitas',
+        'Penilaian Infrastruktur',
+        'Saran Perbaikan',
+        'Kritik',
+        'Saran Lain',
+      ];
+      csvData.add(headers);
+
+      for (int i = 0; i < _allQuestionnaireData.length; i++) {
+        final data = _allQuestionnaireData[i];
+        csvData.add([
+          (i + 1),
+          data.namaGunung ?? '',
+          data.frekuensiPendakian?.toString() ?? '',
+          data.motivasiPendakian.join('; '),
+          data.motivasiLainnya ?? '',
+          data.jalurPendakian ?? '',
+          data.sumberInformasiJalur.join('; '),
+          data.sumberInformasiLainnya ?? '',
+          data.kondisiJalurKesulitan ?? '',
+          data.kondisiJalurPerawatan ?? '',
+          (data.pernahKecelakaan == true ? 'Ya' : 'Tidak'),
+          data.penyebabKecelakaan ?? '',
+          data.penilaianKeamanan ?? '',
+          data.upayaKeamanan.join('; '),
+          data.upayaKeamananLainnya ?? '',
+          data.fasilitasDibutuhkan.join('; '),
+          data.fasilitasLainnya ?? '',
+          data.ketersediaanFasilitas ?? '',
+          data.penilaianInfrastruktur ?? '',
+          data.saranPerbaikan ?? '',
+          data.kritik ?? '',
+          data.saranLain ?? '',
+        ]);
+      }
+
+      String csvString = '';
+      for (var row in csvData) {
+        csvString += row.map((e) {
+          String value = e.toString();
+          if (value.contains(',') || value.contains(';') || value.contains('\n') || value.contains('"')) {
+            value = '"${value.replaceAll('"', '""')}"';
+          }
+          return value;
+        }).join(',');
+        csvString += '\n';
+      }
+
+      // --- Perbaikan Lokasi Penyimpanan ke Folder 'Downloads' yang Umum ---
+      // Menggunakan getDownloadsDirectory() dari path_provider_android
+      // Ini adalah cara yang direkomendasikan untuk menyimpan file yang dapat diakses pengguna
+      // di Android 10+ tanpa memerlukan MANAGE_EXTERNAL_STORAGE (untuk jenis file non-media).
+      // Untuk iOS, tetap di Documents.
+      Directory? baseDirectory;
+      if (Platform.isAndroid) {
+        baseDirectory = await getDownloadsDirectory(); // Ini akan mengarah ke folder Downloads
+      } else if (Platform.isIOS) {
+        baseDirectory = await getApplicationDocumentsDirectory();
+      }
+      
+      if (baseDirectory == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Direktori penyimpanan tidak dapat diakses.')),
+          );
+        }
+        return;
+      }
+
+      // Buat folder khusus di dalam direktori dasar
+      final customFolderPath = '${baseDirectory.path}/KuesionerPendakian';
+      final Directory customDirectory = Directory(customFolderPath);
+      if (!await customDirectory.exists()) {
+        await customDirectory.create(recursive: true);
+        print('Created directory: $customFolderPath');
+      }
+
+      final path = '${customDirectory.path}/Rekapitulasi_Kuesioner_Pendakian.csv';
+      final file = File(path);
+
+      await file.writeAsString(csvString, encoding: utf8);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Izin penyimpanan ditolak. Tidak dapat mengekspor data.')),
+          SnackBar(content: Text('Data berhasil diekspor ke: $path')),
+        );
+      }
+      print('CSV exported to: $path');
+    } catch (e) {
+      print('Error exporting to CSV: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan saat mengekspor data: $e')),
         );
       }
     }
@@ -1293,9 +1324,9 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh), // Tombol Refresh
+            icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Data',
-            onPressed: _isLoading ? null : () => _loadQuestionnaireData(), // Nonaktifkan saat loading
+            onPressed: _isLoading ? null : () => _loadQuestionnaireData(),
           ),
           IconButton(
             icon: const Icon(Icons.download),
@@ -1346,7 +1377,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
                                 _buildInfoRow('Motivasi Lainnya', data.motivasiLainnya),
 
                               const SizedBox(height: 10),
-                              Text('Jalur Pendakian', style: Theme.of(context).textTheme.titleMedium),
+                              Text('ODTW/Jalur Pendakian', style: Theme.of(context).textTheme.titleMedium),
                               _buildInfoRow('Jalur yang Digunakan', data.jalurPendakian),
                               _buildInfoRow('Sumber Informasi Jalur', data.sumberInformasiJalur.join(', ')),
                               if (data.sumberInformasiLainnya != null && data.sumberInformasiLainnya!.isNotEmpty)
