@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart'; // Import for general path_provider methods
-import 'package:permission_handler/permission_handler.dart'; // Import for permissions
+import 'package:path_provider/path_provider.dart'; // Import for path
+import 'package:permission_handler/permission_handler.dart'; // Import for permissions (masih bisa berguna untuk debug/jika Anda memutuskan menyimpan ke galeri foto/dokumen)
 import 'dart:io'; // For File operations
 import 'dart:core';
 import 'dart:io' show Platform;
 import 'dart:convert' show utf8;
 
-// Tambahkan import ini untuk path_provider_android
-import 'package:path_provider_android/path_provider_android.dart';
-
+import 'package:path_provider_android/path_provider_android.dart'; // Pastikan ini diimpor jika menggunakan getDownloadsDirectory
+import 'package:share_plus/share_plus.dart'; // <--- Import share_plus
 
 /// --- Model Data Kuesioner ---
 /// Kelas ini merepresentasikan struktur data satu entri kuesioner.
@@ -899,7 +898,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Bagaimana Anda menilai ketersediaan fasilitas di ODTW/Jalur Pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
+            Text('Bagaimana Anda menilai ketersediaan fasilitas di ODTW/Jalur Pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
                 RadioListTile<String>(
@@ -955,7 +954,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Apa yang Anda pikir tentang infrastruktur ODTW/Jalur Pendakian yang Anda gunakan? (misalnya: jembatan, tangga, jalur setapak)', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
+            Text('Apa yang Anda pikir tentang infrastruktur ODTW/Jalur Pendakian yang Anda gunakan? (misalnya: jembatan, tangga, jalur setapak)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
                 RadioListTile<String>(
@@ -1020,10 +1019,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             const Divider(height: 24, thickness: 1),
             TextFormField(
               controller: _saranPerbaikanController,
-              minLines: 3, // Minimal 3 baris
-              maxLines: null, // Bisa meluas tanpa batas
+              minLines: 3,
+              maxLines: null,
               decoration: const InputDecoration(
-                labelText: 'Saran perbaikan ODTW/Jalur Pendakian?', // Disikat
+                labelText: 'Saran perbaikan ODTW/Jalur Pendakian?',
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -1031,10 +1030,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             const SizedBox(height: 16),
             TextFormField(
               controller: _kritikController,
-              minLines: 3, // Minimal 3 baris
-              maxLines: null, // Bisa meluas tanpa batas
+              minLines: 3,
+              maxLines: null,
               decoration: const InputDecoration(
-                labelText: 'Kritik terhadap ODTW/Jalur Pendakian?', // Disikat
+                labelText: 'Kritik terhadap ODTW/Jalur Pendakian?',
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -1042,10 +1041,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             const SizedBox(height: 16),
             TextFormField(
               controller: _saranLainController,
-              minLines: 3, // Minimal 3 baris
-              maxLines: null, // Bisa meluas tanpa batas
+              minLines: 3,
+              maxLines: null,
               decoration: const InputDecoration(
-                labelText: 'Saran lain terkait pendakian/ODTW/Jalur Pendakian?', // Disikat
+                labelText: 'Saran lain terkait pendakian/ODTW/Jalur Pendakian?',
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
               ),
@@ -1092,15 +1091,11 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
     _loadQuestionnaireData(); // Muat data awal
   }
 
-  // Dipanggil setiap kali dependensi widget berubah, termasuk saat widget ini
-  // kembali ke pohon widget (visible) dalam IndexedStack
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!mounted || _isLoading) return;
 
-    // Tambahkan penundaan singkat untuk memberi waktu data di SharedPreferences untuk disinkronkan.
-    // Ini membantu mengatasi masalah data tidak langsung terbaca setelah disimpan dari tab lain.
     Future.microtask(() {
       print('didChangeDependencies called in SummaryScreen. Attempting to reload questionnaire data after a short delay.');
       Future.delayed(const Duration(milliseconds: 100)).then((_) {
@@ -1149,7 +1144,7 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
               return QuestionnaireData();
             }
           })
-          .toList(); // Hapus filter .where() untuk melihat semua data
+          .toList();
       _isLoading = false;
       print('Loaded ${_allQuestionnaireData.length} valid questionnaire entries.');
     });
@@ -1170,32 +1165,12 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
     print('All data cleared from SharedPreferences.');
   }
 
-  /// Mengekspor data kuesioner ke file CSV.
-  Future<void> _exportToCsv() async {
-    // Meminta Izin Penyimpanan
-    // Minta izin WRITE_EXTERNAL_STORAGE. permission_handler akan menangani dialog.
-    var status = await Permission.storage.request();
+  /// Mengekspor data kuesioner ke file CSV dan membagikannya.
+  Future<void> _exportAndShareCsv() async {
+    // Tidak perlu meminta izin WRITE_EXTERNAL_STORAGE secara eksplisit untuk ini,
+    // karena file akan disimpan di direktori sementara dan langsung dibagikan.
+    // Sistem OS akan menangani izin akses file untuk aplikasi yang menerima share.
 
-    if (!status.isGranted) { // Jika izin belum diberikan atau ditolak
-      // Coba buka pengaturan aplikasi jika izin ditolak permanen
-      if (await Permission.storage.isPermanentlyDenied) {
-        openAppSettings(); // Membuka pengaturan izin aplikasi
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Izin penyimpanan diperlukan. Mohon izinkan di pengaturan aplikasi.')),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Izin penyimpanan ditolak. Tidak dapat mengekspor data.')),
-          );
-        }
-      }
-      return; // Hentikan ekspor jika izin tidak diberikan
-    }
-
-    // Jika izin granted
     try {
       List<List<dynamic>> csvData = [];
 
@@ -1265,51 +1240,31 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         csvString += '\n';
       }
 
-      // --- Perbaikan Lokasi Penyimpanan ke Folder 'Downloads' yang Umum ---
-      // Menggunakan getDownloadsDirectory() dari path_provider_android
-      // Ini adalah cara yang direkomendasikan untuk menyimpan file yang dapat diakses pengguna
-      // di Android 10+ tanpa memerlukan MANAGE_EXTERNAL_STORAGE (untuk jenis file non-media).
-      // Untuk iOS, tetap di Documents.
-      Directory? baseDirectory;
-      if (Platform.isAndroid) {
-        baseDirectory = await getDownloadsDirectory(); // Ini akan mengarah ke folder Downloads
-      } else if (Platform.isIOS) {
-        baseDirectory = await getApplicationDocumentsDirectory();
-      }
-      
-      if (baseDirectory == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Direktori penyimpanan tidak dapat diakses.')),
-          );
-        }
-        return;
-      }
-
-      // Buat folder khusus di dalam direktori dasar
-      final customFolderPath = '${baseDirectory.path}/KuesionerPendakian';
-      final Directory customDirectory = Directory(customFolderPath);
-      if (!await customDirectory.exists()) {
-        await customDirectory.create(recursive: true);
-        print('Created directory: $customFolderPath');
-      }
-
-      final path = '${customDirectory.path}/Rekapitulasi_Kuesioner_Pendakian.csv';
+      // --- Simpan file ke direktori sementara ---
+      // getTemporaryDirectory() adalah lokasi yang aman dan tidak memerlukan izin
+      final directory = await getTemporaryDirectory();
+      final path = '${directory.path}/Rekapitulasi_Kuesioner_Pendakian.csv';
       final file = File(path);
 
       await file.writeAsString(csvString, encoding: utf8);
+      print('CSV created temporarily at: $path');
+
+      // --- Bagikan file ---
+      if (mounted) {
+        await Share.shareXFiles([XFile(file.path)], text: 'Berikut data kuesioner pendakian.');
+        print('CSV shared via share_plus.');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Data berhasil diekspor ke: $path')),
+          SnackBar(content: Text('CSV berhasil dibagikan!')),
         );
       }
-      print('CSV exported to: $path');
     } catch (e) {
-      print('Error exporting to CSV: $e');
+      print('Error creating or sharing CSV: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan saat mengekspor data: $e')),
+          SnackBar(content: Text('Terjadi kesalahan saat membagikan data: $e')),
         );
       }
     }
@@ -1329,9 +1284,9 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
             onPressed: _isLoading ? null : () => _loadQuestionnaireData(),
           ),
           IconButton(
-            icon: const Icon(Icons.download),
-            tooltip: 'Ekspor ke CSV',
-            onPressed: _allQuestionnaireData.isEmpty ? null : () => _exportToCsv(),
+            icon: const Icon(Icons.share), // Ubah ikon dan tooltip menjadi share
+            tooltip: 'Bagikan CSV',
+            onPressed: _allQuestionnaireData.isEmpty ? null : () => _exportAndShareCsv(), // Panggil _exportAndShareCsv
           ),
           IconButton(
             icon: const Icon(Icons.delete_forever),

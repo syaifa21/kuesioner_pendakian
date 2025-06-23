@@ -38,6 +38,7 @@ dependencies:
   path_provider: ^2.1.0 # Pastikan ini atau versi yang lebih baru
   permission_handler: ^11.0.0
   path_provider_android: ^2.2.0 # <--- Pastikan ini ada dan versinya terbaru
+  share_plus: ^7.0.2 # <--- Tambahkan baris ini
 
 dev_dependencies:
   flutter_test:
