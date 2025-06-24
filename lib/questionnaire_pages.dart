@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart'; // Import for path
-import 'package:permission_handler/permission_handler.dart'; // Import for permissions (masih bisa berguna untuk debug/jika Anda memutuskan menyimpan ke galeri foto/dokumen)
-import 'dart:io'; // For File operations
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 import 'dart:core';
 import 'dart:io' show Platform;
 import 'dart:convert' show utf8;
 
-import 'package:path_provider_android/path_provider_android.dart'; // Pastikan ini diimpor jika menggunakan getDownloadsDirectory
-import 'package:share_plus/share_plus.dart'; // <--- Import share_plus
+import 'package:path_provider_android/path_provider_android.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// --- Model Data Kuesioner ---
-/// Kelas ini merepresentasikan struktur data satu entri kuesioner.
 class QuestionnaireData {
+  String? nama; // Tambah: Nama
+  String? asal; // Tambah: Asal
   String? namaGunung;
   int? frekuensiPendakian;
   List<String> motivasiPendakian;
   String? motivasiLainnya;
-  String? jalurPendakian; // Ini tetap radio (single choice)
-  List<String> sumberInformasiJalur; // Ini harusnya checkbox (multi choice)
+  String? jalurPendakian;
+  List<String> sumberInformasiJalur;
   String? sumberInformasiLainnya;
   String? kondisiJalurKesulitan;
   String? kondisiJalurPerawatan;
@@ -37,6 +38,8 @@ class QuestionnaireData {
   String? saranLain;
 
   QuestionnaireData({
+    this.nama, // Tambah
+    this.asal, // Tambah
     this.namaGunung,
     this.frekuensiPendakian,
     this.motivasiPendakian = const [],
@@ -61,6 +64,8 @@ class QuestionnaireData {
   });
 
   Map<String, dynamic> toJson() => {
+    'nama': nama, // Tambah
+    'asal': asal, // Tambah
     'namaGunung': namaGunung,
     'frekuensiPendakian': frekuensiPendakian,
     'motivasiPendakian': motivasiPendakian,
@@ -86,6 +91,8 @@ class QuestionnaireData {
 
   factory QuestionnaireData.fromJson(Map<String, dynamic> json) {
     return QuestionnaireData(
+      nama: json['nama'], // Tambah
+      asal: json['asal'], // Tambah
       namaGunung: json['namaGunung'],
       frekuensiPendakian: json['frekuensiPendakian'],
       motivasiPendakian: List<String>.from(json['motivasiPendakian'] ?? []),
@@ -133,6 +140,11 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
   final TextEditingController _kritikController = TextEditingController();
   final TextEditingController _saranLainController = TextEditingController();
 
+  // Tambah: TextEditingController untuk Nama dan Asal
+  final TextEditingController _namaController = TextEditingController();
+  final TextEditingController _asalController = TextEditingController();
+
+
   @override
   bool get wantKeepAlive => true;
 
@@ -157,6 +169,9 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
     _saranPerbaikanController.dispose();
     _kritikController.dispose();
     _saranLainController.dispose();
+    // Tambah: Dispose controllers baru
+    _namaController.dispose();
+    _asalController.dispose();
     super.dispose();
   }
 
@@ -188,8 +203,12 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      // Pastikan data dari text controllers dan pilihan disimpan ke _currentData
+      _currentData.nama = _namaController.text; // Ambil nilai Nama
+      _currentData.asal = _asalController.text; // Ambil nilai Asal
+
       _currentData.motivasiLainnya = _currentData.motivasiPendakian.contains('Lainnya') ? _motivasiLainnyaController.text : null;
-      _currentData.sumberInformasiLainnya = _currentData.sumberInformasiJalur.contains('Lainnya') ? _sumberInformasiLainnyaController.text : null;
+      _currentData.sumberInformasiJalur.contains('Lainnya') ? _sumberInformasiLainnyaController.text : null;
       _currentData.penyebabKecelakaan = _currentData.pernahKecelakaan == true ? _penyebabKecelakaanController.text : null;
       _currentData.upayaKeamananLainnya = _currentData.upayaKeamanan.contains('Lainnya') ? _upayaKeamananLainnyaController.text : null;
       _currentData.fasilitasLainnya = _currentData.fasilitasDibutuhkan.contains('Lainnya') ? _fasilitasLainnyaController.text : null;
@@ -198,6 +217,8 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
       _currentData.saranLain = _saranLainController.text;
 
       QuestionnaireData dataToSave = QuestionnaireData(
+        nama: _currentData.nama, // Tambah
+        asal: _currentData.asal, // Tambah
         namaGunung: _currentData.namaGunung,
         frekuensiPendakian: _currentData.frekuensiPendakian,
         motivasiPendakian: List.from(_currentData.motivasiPendakian),
@@ -249,6 +270,9 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
       _saranPerbaikanController.clear();
       _kritikController.clear();
       _saranLainController.clear();
+      // Tambah: Clear controllers baru
+      _namaController.clear();
+      _asalController.clear();
     } else {
       print('Form validation failed.');
       if (mounted) {
@@ -275,12 +299,42 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
             ),
             const SizedBox(height: 24),
 
-            /// --- Bagian 1: Informasi Umum ---
+            /// --- Bagian 1: Informasi Umum (Data Diri) ---
             Text(
-              'Bagian 1: Informasi Umum',
+              'Bagian 1: Informasi Umum (Data Diri)', // Ubah judul bagian
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const Divider(height: 24, thickness: 1),
+            TextFormField(
+              controller: _namaController, // Gunakan controller
+              decoration: const InputDecoration(
+                labelText: 'Nama Lengkap Anda', // Label untuk Nama
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Mohon masukkan nama Anda';
+                }
+                return null;
+              },
+              // Nilai akan diambil dari controller di _submitForm
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _asalController, // Gunakan controller
+              decoration: const InputDecoration(
+                labelText: 'Asal Daerah Anda', // Label untuk Asal
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Mohon masukkan asal daerah Anda';
+                }
+                return null;
+              },
+              // Nilai akan diambil dari controller di _submitForm
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               decoration: const InputDecoration(
                 labelText: 'Apa nama ODTW/Jalur Pendakian yang anda kunjungi?',
@@ -293,7 +347,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               },
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Mohon masukkan namanya';
+                  return 'Mohon masukkan nama ODTW/Jalur Pendakian';
                 }
                 return null;
               },
@@ -312,7 +366,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               },
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Mohon masukkan frekuensi ';
+                  return 'Mohon masukkan frekuensi kunjungan';
                 }
                 if (int.tryParse(value) == null) {
                   return 'Mohon masukkan angka yang valid';
@@ -394,11 +448,11 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
 
             /// --- Bagian 2: ODTW/Jalur Pendakian ---
             Text(
-              'Bagian 2: ODTW/Jalur Pendakian', // Ganti nama
+              'Bagian 2: ODTW/Jalur Pendakian',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const Divider(height: 24, thickness: 1),
-            Text('ODTW/Jalur Pendakian mana yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
+            Text('ODTW/Jalur Pendakian mana yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
                 RadioListTile<String>(
@@ -434,7 +488,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Bagaimana Anda mengetahui ODTW/Jalur Pendakian yang Anda gunakan? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
+            Text('Bagaimana Anda mengetahui ODTW/Jalur Pendakian yang Anda gunakan? (Bisa pilih lebih dari satu)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
                 CheckboxListTile(
@@ -504,7 +558,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Apa yang Anda pikir tentang kondisi ODTW/Jalur Pendakian yang Anda gunakan? (Kesulitan)', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
+            Text('Apa yang Anda pikir tentang kondisi ODTW/Jalur Pendakian yang Anda gunakan? (Kesulitan)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
                 RadioListTile<String>(
@@ -540,7 +594,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
               ],
             ),
             const SizedBox(height: 16),
-            Text('Apa yang Anda pikir tentang kondisi ODTW/Jalur Pendakian yang Anda gunakan? (Perawatan)', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
+            Text('Apa yang Anda pikir tentang kondisi ODTW/Jalur Pendakian yang Anda gunakan? (Perawatan)', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
                 RadioListTile<String>(
@@ -556,6 +610,16 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 RadioListTile<String>(
                   title: const Text('Cukup terawat'),
                   value: 'cukup_terawat',
+                  groupValue: _currentData.kondisiJalurPerawatan,
+                  onChanged: (String? value) {
+                    setState(() {
+                      _currentData.kondisiJalurPerawatan = value;
+                    });
+                  },
+                ),
+                RadioListTile<String>(
+                  title: const Text('Kurang terawat'),
+                  value: 'kurang_terawat',
                   groupValue: _currentData.kondisiJalurPerawatan,
                   onChanged: (String? value) {
                     setState(() {
@@ -620,7 +684,7 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> with Automati
                 ),
               ),
             const SizedBox(height: 16),
-            Text('Bagaimana Anda menilai keselamatan dan keamanan ODTW/Jalur Pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium), // Ganti nama
+            Text('Bagaimana Anda menilai keselamatan dan keamanan ODTW/Jalur Pendakian yang Anda gunakan?', style: Theme.of(context).textTheme.titleMedium),
             Column(
               children: [
                 RadioListTile<String>(
@@ -1157,20 +1221,18 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
 
   /// Mengekspor data kuesioner ke file CSV dan membagikannya.
   Future<void> _exportAndShareCsv() async {
-    // Tidak perlu meminta izin WRITE_EXTERNAL_STORAGE secara eksplisit untuk ini,
-    // karena file akan disimpan di direktori sementara dan langsung dibagikan.
-    // Sistem OS akan menangani izin akses file untuk aplikasi yang menerima share.
-
     try {
       List<List<dynamic>> csvData = [];
 
       List<String> headers = [
         'No.',
-        'Nama Gunung',
-        'Frekuensi Pendakian',
-        'Motivasi Pendakian',
+        'Nama', // Tambah
+        'Asal', // Tambah
+        'Nama ODTW/Jalur Pendakian', // Tambah
+        'Frekuensi Kunjungan', // Ubah
+        'Motivasi Kunjungan', // Ubah
         'Motivasi Lainnya',
-        'ODTW/Jalur Pendakian',
+        'Jalur Pendakian',
         'Sumber Informasi Jalur',
         'Sumber Informasi Lainnya',
         'Kondisi Jalur (Kesulitan)',
@@ -1194,6 +1256,8 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         final data = _allQuestionnaireData[i];
         csvData.add([
           (i + 1),
+          data.nama ?? '', // Tambah
+          data.asal ?? '', // Tambah
           data.namaGunung ?? '',
           data.frekuensiPendakian?.toString() ?? '',
           data.motivasiPendakian.join('; '),
@@ -1230,8 +1294,6 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
         csvString += '\n';
       }
 
-      // --- Simpan file ke direktori sementara ---
-      // getTemporaryDirectory() adalah lokasi yang aman dan tidak memerlukan izin
       final directory = await getTemporaryDirectory();
       final path = '${directory.path}/Rekapitulasi_Kuesioner_Pendakian.csv';
       final file = File(path);
@@ -1239,7 +1301,6 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
       await file.writeAsString(csvString, encoding: utf8);
       print('CSV created temporarily at: $path');
 
-      // --- Bagikan file ---
       if (mounted) {
         await Share.shareXFiles([XFile(file.path)], text: 'Berikut data kuesioner pendakian.');
         print('CSV shared via share_plus.');
@@ -1274,9 +1335,9 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
             onPressed: _isLoading ? null : () => _loadQuestionnaireData(),
           ),
           IconButton(
-            icon: const Icon(Icons.share), // Ubah ikon dan tooltip menjadi share
+            icon: const Icon(Icons.share),
             tooltip: 'Bagikan CSV',
-            onPressed: _allQuestionnaireData.isEmpty ? null : () => _exportAndShareCsv(), // Panggil _exportAndShareCsv
+            onPressed: _allQuestionnaireData.isEmpty ? null : () => _exportAndShareCsv(),
           ),
           IconButton(
             icon: const Icon(Icons.delete_forever),
@@ -1315,9 +1376,11 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
                                 style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Theme.of(context).primaryColor),
                               ),
                               const Divider(height: 20, thickness: 1),
-                              _buildInfoRow('Nama Gunung', data.namaGunung),
-                              _buildInfoRow('Frekuensi Pendakian', '${data.frekuensiPendakian ?? '-'} kali/tahun'),
-                              _buildInfoRow('Motivasi Pendakian', data.motivasiPendakian.join(', ')),
+                              _buildInfoRow('Nama', data.nama), // Tambah
+                              _buildInfoRow('Asal', data.asal), // Tambah
+                              _buildInfoRow('Nama ODTW/Jalur Pendakian', data.namaGunung), // Ubah
+                              _buildInfoRow('Frekuensi Kunjungan', '${data.frekuensiPendakian ?? '-'} kali/tahun'), // Ubah
+                              _buildInfoRow('Motivasi Kunjungan', data.motivasiPendakian.join(', ')), // Ubah
                               if (data.motivasiLainnya != null && data.motivasiLainnya!.isNotEmpty)
                                 _buildInfoRow('Motivasi Lainnya', data.motivasiLainnya),
 
@@ -1384,4 +1447,4 @@ class _SummaryScreenState extends State<SummaryScreen> with AutomaticKeepAliveCl
       ),
     );
   }
-} 
+}
